@@ -1,4 +1,8 @@
+# RustRover
+.idea/
+
+# Build
 /target
 
-# IntelliJ / RustRover
-.idea/
+# Runtime
+hashes.txt
