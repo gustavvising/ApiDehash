@@ -1,6 +1,7 @@
 mod file;
 mod hashes;
 mod algorithm;
+mod extract;
 
 use std::env;
 use std::process::exit;
@@ -25,4 +26,8 @@ fn main() {
             exit(1);
         }
     };
+
+    let target = &args[1];
+    extract::scan(target);
+
 }
