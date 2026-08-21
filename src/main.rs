@@ -12,16 +12,16 @@ fn main() {
         exit(1);
     }
 
-    let hashes = match File::open("hashes.txt") {
+    let hashes = match File::open("hashes.csv") {
         Ok(file) => file,
 
         Err(e) if e.kind() == ErrorKind::NotFound => {
-            // hashes.txt does not exist, creating it
+            // hashes.csv does not exist, creating it
             create_hashes_file()
         }
 
         Err(e) => {
-            eprintln!("Could not open hashes.txt: {}", e);
+            eprintln!("Could not open hashes.csv: {}", e);
             exit(1);
         }
     };
@@ -107,10 +107,10 @@ fn generate_hashes() -> Vec<ApiHash> {
 }
 
 fn create_hashes_file() -> File {
-    let mut file = match File::create("hashes.txt") {
+    let mut file = match File::create("hashes.csv") {
         Ok(file) => file,
         Err(e) => {
-            eprintln!("Could not create hashes.txt: {}", e);
+            eprintln!("Could not create hashes.csv: {}", e);
             exit(1);
         }
     };
@@ -118,7 +118,7 @@ fn create_hashes_file() -> File {
     for entry in generate_hashes() {
         let line = format!("{},{:08x},{:08x}\n", entry.name, entry.ror13, entry.syswhispers2);
         if let Err(e) = file.write_all(line.as_bytes()) {
-            eprintln!("Could not write to hashes.txt: {}", e);
+            eprintln!("Could not write to hashes.csv: {}", e);
             exit(1);
         }
     }
