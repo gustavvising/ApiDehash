@@ -38,5 +38,22 @@ fn main() {
         }
     };
 
+    let matches = compare::compare(&candidates);
+
+    if matches.is_empty() {
+        println!("No API hash matches found.");
+        return;
+    }
+
+    println!("API hash matches:");
+
+    for matched in matches {
+        println!(
+            "{:<30} {:<15} 0x{:08X}",
+            matched.api,
+            matched.algorithm.name(),
+            matched.hash
+        );
+    }
 
 }
