@@ -9,7 +9,6 @@ pub fn generate_hashes() -> Vec<(String, Vec<(HashAlgorithm, u32)>)> {
     });
 
     let algorithms = [
-        HashAlgorithm::Ror13,
         HashAlgorithm::SysWhispers2,
     ];
 

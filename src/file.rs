@@ -18,7 +18,6 @@ pub fn create_hashes_csv() -> File {
     };
 
     let algorithms = [
-        HashAlgorithm::Ror13,
         HashAlgorithm::SysWhispers2,
     ];
 
