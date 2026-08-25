@@ -2,6 +2,7 @@ mod file;
 mod hashes;
 mod algorithm;
 mod extract;
+mod compare;
 
 use std::env;
 use std::process::exit;
@@ -28,6 +29,14 @@ fn main() {
     };
 
     let target = &args[1];
-    extract::scan(target);
+
+    let candidates = match extract::scan(target) {
+        Ok(candidates) => candidates,
+        Err(e) => {
+            eprintln!("Failed to scan {target}: {e}");
+            return;
+        }
+    };
+
 
 }
