@@ -1,3 +1,4 @@
+// TODO: Automatically identify each builds unique seed
 const SW2_SEED: u32 = 0x7d895397;
 
 pub fn hash(input: &str) -> u32 {

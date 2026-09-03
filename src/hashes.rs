@@ -10,6 +10,7 @@ pub fn generate_hashes() -> Vec<(String, Vec<(HashAlgorithm, u32)>)> {
 
     let algorithms = [
         HashAlgorithm::SysWhispers2,
+        HashAlgorithm::DJB2
     ];
 
     let mut results = Vec::new();

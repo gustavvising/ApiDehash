@@ -19,6 +19,7 @@ pub fn create_hashes_csv() -> File {
 
     let algorithms = [
         HashAlgorithm::SysWhispers2,
+        HashAlgorithm::DJB2
     ];
 
     // CSV Headers
