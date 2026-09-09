@@ -1,4 +1,4 @@
-use object::{Object, ObjectSection};
+use object::{Object, ObjectSection, SectionKind};
 use std::collections::HashSet;
 use std::fs;
 
@@ -9,21 +9,29 @@ pub fn scan(target: &str) -> Result<HashSet<u32>, Box<dyn std::error::Error>> {
     let mut candidates = HashSet::new();
 
     for section in file.sections() {
-        let name = section.name().unwrap_or("");
+        let relevant = matches!(
+            section.kind(),
+            SectionKind::Text
+                | SectionKind::ReadOnlyData
+                | SectionKind::Data
+                | SectionKind::UninitializedData
+        );
 
-        if name == ".text" || name == ".rdata" || name == ".data" {
-            if let Ok(bytes) = section.data() {
-                for i in 0..bytes.len().saturating_sub(3) {
-                    let value = u32::from_le_bytes([
-                        bytes[i],
-                        bytes[i + 1],
-                        bytes[i + 2],
-                        bytes[i + 3],
-                    ]);
+        if !relevant {
+            continue;
+        }
 
-                    candidates.insert(value);
-                }
-            }
+        let bytes = section.data()?;
+
+        for chunk in bytes.windows(4) {
+            let value = u32::from_le_bytes([
+                chunk[0],
+                chunk[1],
+                chunk[2],
+                chunk[3],
+            ]);
+
+            candidates.insert(value);
         }
     }
 
