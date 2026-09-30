@@ -25,6 +25,18 @@ functions to recover their original names.
 
 Get the latest release from the [Releases](../../releases) page.
 
+## Usage
+
+```text
+ApiDehash <file>
+```
+
+For example:
+
+```bash
+ApiDehash malware.exe
+```
+
 ## Development
 
 ### Requirements
@@ -50,16 +62,4 @@ Output to:
 
 ```text
 target/release/ApiDehash
-```
-
-## Usage
-
-```text
-ApiDehash <file>
-```
-
-For example:
-
-```bash
-ApiDehash malware.exe
 ```
