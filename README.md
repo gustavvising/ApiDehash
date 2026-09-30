@@ -2,6 +2,11 @@
 
 API Dehash is a malware analysis tool that helps identify Windows API functions hidden through API hashing. It recovers the original Windows API names from hashed references, providing valuable insight into a program’s behavior and functionality.
 
+## Status
+
+Work in progress. Supports `syswhispers2` and `djb2` with hardcoded
+seeds. Per-build seed recovery, false-positive filtering and enhanced cli are planned.
+
 ## API Hashing
 
 API hashing is a technique commonly encountered during malware analysis.
