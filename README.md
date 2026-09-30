@@ -21,13 +21,9 @@ may be represented by their corresponding hash values within a binary.
 API Dehash compares these hashes against a database of known Windows API
 functions to recover their original names.
 
-<br>
-
 ## Installation
 
 Get the latest release from the [Releases](../../releases) page.
-
-<br>
 
 ## Development
 
@@ -50,13 +46,11 @@ cd ApiDehash
 cargo build --release
 ```
 
-The compiled executable will be located in:
+Output to:
 
 ```text
 target/release/ApiDehash
 ```
-
-<br>
 
 ## Usage
 
