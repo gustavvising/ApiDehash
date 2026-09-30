@@ -58,7 +58,7 @@ cd ApiDehash
 cargo build --release
 ```
 
-Output to:
+Output:
 
 ```text
 target/release/ApiDehash
