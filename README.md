@@ -31,10 +31,10 @@ functions to recover their original names.
 Get the latest release from the [Releases](../../releases) page.
 
 ## Usage
-ApiDehash <COMMAND> [OPTIONS]
+ApiDehash.exe <COMMAND> [OPTIONS]
 
 ### Commands
-```bash
+```text
 file - Generate and save hashes.csv
 hashes - Generate API hashes in memory
 algorithm - Display the selected hashing algorithms and seeds
@@ -46,14 +46,14 @@ version - Print version information
 ```
 
 ### Options
-```bash
+```text
 --syswhispers2 <SEED>  SysWhispers2 seed (decimal or hexadecimal)
 --djb2 <SEED>          DJB2 seed (decimal or hexadecimal)
 ```
 
 ### Examples
-Generate hashes using DJB2:
 ```bash
+Generate hashes using DJB2:
 ApiDehash hashes --djb2 0x12345678
 ```
 
