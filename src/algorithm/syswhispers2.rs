@@ -1,10 +1,6 @@
-// TODO: Automatically identify each builds unique seed
-const SW2_SEED: u32 = 0x7d895397;
-
-pub fn hash(input: &str) -> u32 {
+pub fn hash(input: &str, seed: u32) -> u32 {
     let bytes = input.as_bytes();
-
-    let mut hash: u32 = SW2_SEED;
+    let mut hash = seed;
     let mut i = 0;
 
     while i < bytes.len() {
@@ -16,7 +12,8 @@ pub fn hash(input: &str) -> u32 {
 
         let ror8_hash = hash.rotate_right(8);
 
-        hash ^= (partial_name as u32).wrapping_add(ror8_hash);
+        hash ^= (partial_name as u32)
+            .wrapping_add(ror8_hash);
 
         i += 1;
     }

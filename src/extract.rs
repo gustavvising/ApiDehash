@@ -2,7 +2,9 @@ use object::{Object, ObjectSection, SectionKind};
 use std::collections::HashSet;
 use std::fs;
 
-pub fn scan(target: &str) -> Result<HashSet<u32>, Box<dyn std::error::Error>> {
+pub fn scan(
+    target: &str,
+) -> Result<HashSet<u32>, Box<dyn std::error::Error>> {
     let data = fs::read(target)?;
     let file = object::File::parse(&*data)?;
 

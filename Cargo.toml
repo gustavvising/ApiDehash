@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 object = "0.40.0"
-log = "0.4.34"
+clap = { version = "4", features = ["derive"] }

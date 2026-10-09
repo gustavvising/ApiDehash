@@ -4,8 +4,8 @@ API Dehash is a malware analysis tool that helps identify Windows API functions 
 
 ## Status
 
-Work in progress. Supports `syswhispers2` and `djb2` with hardcoded
-seeds. Per-build seed recovery, false-positive filtering and enhanced cli are planned.
+Supports `syswhispers2` and `djb2` hashing algorithms with custom
+seeds. Per-sample automatic seed recovery, false-positive filtering and support for more hashing algorithms are planned.
 
 ## API Hashing
 
@@ -31,16 +31,68 @@ functions to recover their original names.
 Get the latest release from the [Releases](../../releases) page.
 
 ## Usage
+ApiDehash <COMMAND> [OPTIONS]
 
-```text
-ApiDehash <file>
+### Commands
+```bash
+file - Generate and save hashes.csv
+hashes - Generate API hashes in memory
+algorithm - Display the selected hashing algorithms and seeds
+extract <file> - Extract 32-bit hash candidates from an executable
+compare <file> - Compare extracted candidates against generated API hashes
+scan <file> - Extract candidates and compare them against generated API hashes
+help - Print this message or the help of the given subcommand(s)
+version - Print version information
 ```
 
-For example:
+### Options
+```bash
+--syswhispers2 <SEED>  SysWhispers2 seed (decimal or hexadecimal)
+--djb2 <SEED>          DJB2 seed (decimal or hexadecimal)
+```
+
+### Examples
+Generate hashes using DJB2:
+```bash
+ApiDehash hashes --djb2 0x12345678
+```
 
 ```bash
-ApiDehash malware.exe
+Generate hashes using SysWhispers2:
+ApiDehash hashes --syswhispers2 0x12345678
 ```
+
+```bash
+Generate hashes using both algorithms:
+ApiDehash hashes --syswhispers2 0x12345678 --djb2 0x12345678
+```
+
+```bash
+Create hashes.csv:
+ApiDehash file --syswhispers2 0x12345678 --djb2 0x12345678
+```
+
+```bash
+Extract candidates from an executable:
+ApiDehash extract malware.exe --djb2 0x12345678
+```
+
+```bash
+Compare candidates against generated API hashes:
+ApiDehash compare malware.exe --syswhispers2 0x12345678
+```
+
+```bash
+Scan an executable using both algorithms:
+ApiDehash scan malware.exe --syswhispers2 0x12345678 --djb2 0x12345678
+```
+
+```bash
+Display help:
+ApiDehash --help
+```
+
+Note: At least one seed must be provided for every command. Seeds can be specified in decimal or hexadecimal notation. The apis.txt file must be available in the current working directory for commands that generate or compare API hashes.
 
 ## Development
 

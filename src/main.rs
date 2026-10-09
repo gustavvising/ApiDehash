@@ -1,48 +1,248 @@
+use clap::{CommandFactory, Parser, Subcommand};
+use std::collections::HashSet;
+use std::process::ExitCode;
+
+mod algorithm;
+mod compare;
+mod extract;
 mod file;
 mod hashes;
-mod algorithm;
-mod extract;
-mod compare;
 
-use std::env;
-use std::process::exit;
+use algorithm::HashConfig;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
+#[derive(Parser, Debug)]
+#[command(
+    name = "ApiDehash",
+    about = "API Dehash - CLI",
+    override_usage = "ApiDehash.exe <COMMAND> [OPTIONS]",
+    disable_help_flag = true,
+    disable_help_subcommand = true,
+    disable_version_flag = true
+)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 
-    if args.len() < 2 {
-        println!("Specify the target executable");
-        exit(1);
+    /// SysWhispers2 seed (decimal or hexadecimal)
+    #[arg(
+        long,
+        global = true,
+        value_name = "SEED",
+        value_parser = parse_seed
+    )]
+    syswhispers2: Option<u32>,
+
+    /// DJB2 seed (decimal or hexadecimal)
+    #[arg(
+        long,
+        global = true,
+        value_name = "SEED",
+        value_parser = parse_seed
+    )]
+    djb2: Option<u32>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Generate and save hashes.csv
+    File,
+
+    /// Generate API hashes in memory
+    Hashes,
+
+    /// Display the selected hashing algorithms and seeds
+    Algorithm,
+
+    /// Extract 32-bit hash candidates from an executable
+    Extract {
+        target: String,
+    },
+
+    /// Extract candidates and compare them against generated API hashes
+    Compare {
+        target: String,
+    },
+
+    /// Extract candidates and compare them against generated API hashes
+    Scan {
+        target: String,
+    },
+
+    /// Print this message or the help of the given subcommand(s)
+    Help {
+        #[arg(value_name = "COMMAND")]
+        command: Option<String>,
+    },
+
+    /// Print version information
+    Version,
+}
+
+fn parse_seed(value: &str) -> Result<u32, String> {
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
+        if hex.is_empty() {
+            return Err("Hexadecimal seed cannot be empty".to_string());
+        }
+
+        u32::from_str_radix(hex, 16)
+            .map_err(|e| {
+                format!("Invalid hexadecimal seed '{value}': {e}")
+            })
+    } else {
+        value.parse::<u32>().map_err(|e| {
+            format!("Invalid decimal seed '{value}': {e}")
+        })
+    }
+}
+
+fn print_help(command: Option<&str>) -> Result<(), String> {
+    let mut cmd = Cli::command();
+
+    if let Some(name) = command {
+        let subcommand = cmd
+            .find_subcommand_mut(name)
+            .ok_or_else(|| format!("Unknown command '{name}'"))?;
+
+        subcommand
+            .print_help()
+            .map_err(|e| e.to_string())?;
+    } else {
+        cmd.print_help()
+            .map_err(|e| e.to_string())?;
     }
 
-    let _hashes = match file::open_hashes_file() {
-        Ok(file) => file,
+    println!();
+    Ok(())
+}
 
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            file::create_hashes_csv()
-        }
+fn main() -> ExitCode {
+    let cli = Cli::parse();
 
-        Err(e) => {
-            eprintln!("Could not open hashes.csv: {}", e);
-            exit(1);
+    // Handle help and version before validating the hash configuration.
+    match &cli.command {
+        Commands::Help { command } => {
+            return match print_help(command.as_deref()) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(message) => {
+                    eprintln!("Error: {message}");
+                    ExitCode::FAILURE
+                }
+            };
         }
+        Commands::Version => {
+            println!(
+                "{} {}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            );
+            return ExitCode::SUCCESS;
+        }
+        _ => {}
+    }
+
+    let config = HashConfig {
+        syswhispers2_seed: cli.syswhispers2,
+        djb2_seed: cli.djb2,
     };
 
-    let target = &args[1];
+    if let Err(message) = config.validate() {
+        eprintln!("Error: {message}");
+        return ExitCode::FAILURE;
+    }
 
-    let candidates = match extract::scan(target) {
-        Ok(candidates) => candidates,
-        Err(e) => {
-            eprintln!("Failed to scan {target}: {e}");
-            return;
+    let result = match cli.command {
+        Commands::File => {
+            match file::create_hashes_csv(&config) {
+                Ok(()) => {
+                    println!("Created hashes.csv");
+                    Ok(())
+                }
+                Err(e) => {
+                    Err(format!("Could not create hashes.csv: {e}"))
+                }
+            }
         }
+
+        Commands::Hashes => {
+            match hashes::generate_hashes(&config) {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    Err(format!("Could not generate hashes: {e}"))
+                }
+            }
+        }
+
+        Commands::Algorithm => {
+            println!("Selected algorithms:");
+
+            if let Some(seed) = config.syswhispers2_seed {
+                println!("  syswhispers2: 0x{seed:08X}");
+            }
+
+            if let Some(seed) = config.djb2_seed {
+                println!("  djb2:         0x{seed:08X}");
+            }
+
+            Ok(())
+        }
+
+        Commands::Extract { target } => {
+            match extract::scan(&target) {
+                Ok(candidates) => {
+                    println!(
+                        "Extracted {} unique candidates:",
+                        candidates.len()
+                    );
+
+                    for candidate in candidates {
+                        println!("0x{candidate:08X}");
+                    }
+
+                    Ok(())
+                }
+                Err(e) => {
+                    Err(format!("Failed to scan {target}: {e}"))
+                }
+            }
+        }
+
+        Commands::Compare { target }
+        | Commands::Scan { target } => {
+            run_compare(&target, &config)
+        }
+
+        Commands::Help { .. } | Commands::Version => unreachable!(),
     };
 
-    let matches = compare::compare(&candidates);
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(message) => {
+            eprintln!("Error: {message}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run_compare(
+    target: &str,
+    config: &HashConfig,
+) -> Result<(), String> {
+    let candidates: HashSet<u32> = extract::scan(target)
+        .map_err(|e| {
+            format!("Failed to scan {target}: {e}")
+        })?;
+
+    let matches = compare::compare(&candidates, config)
+        .map_err(|e| {
+            format!("Comparison failed: {e}")
+        })?;
 
     if matches.is_empty() {
         println!("No API hash matches found.");
-        return;
+        return Ok(());
     }
 
     println!("API hash matches:");
@@ -56,4 +256,5 @@ fn main() {
         );
     }
 
+    Ok(())
 }
