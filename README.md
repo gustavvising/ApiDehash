@@ -31,7 +31,7 @@ functions to recover their original names.
 Get the latest release from the [Releases](../../releases) page.
 
 ## Usage
-ApiDehash.exe <COMMAND> [OPTIONS]
+ApiDehash `<COMMAND>` [OPTIONS]
 
 ### Commands
 ```text
