@@ -1,5 +1,6 @@
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 mod algorithm;
@@ -14,10 +15,8 @@ use algorithm::HashConfig;
 #[command(
     name = "ApiDehash",
     about = "API Dehash - CLI",
-    override_usage = "ApiDehash.exe <COMMAND> [OPTIONS]",
-    disable_help_flag = true,
-    disable_help_subcommand = true,
-    disable_version_flag = true
+    version,
+    override_usage = "ApiDehash.exe <COMMAND> [OPTIONS]"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -40,42 +39,26 @@ struct Cli {
         value_parser = parse_seed
     )]
     djb2: Option<u32>,
+
+    /// Custom API list, one API name per line (default: built-in list)
+    #[arg(
+        long,
+        global = true,
+        value_name = "FILE"
+    )]
+    apis: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Generate and save hashes.csv
-    File,
 
-    /// Generate API hashes in memory
-    Hashes,
-
-    /// Display the selected hashing algorithms and seeds
-    Algorithm,
-
-    /// Extract 32-bit hash candidates from an executable
-    Extract {
-        target: String,
-    },
-
-    /// Extract candidates and compare them against generated API hashes
-    Compare {
-        target: String,
-    },
-
-    /// Extract candidates and compare them against generated API hashes
+    /// Extract candidates from an executable and compare them against APIs
     Scan {
         target: String,
     },
 
-    /// Print this message or the help of the given subcommand(s)
-    Help {
-        #[arg(value_name = "COMMAND")]
-        command: Option<String>,
-    },
-
-    /// Print version information
-    Version,
+    /// Generate and save a hash lookup table to hashes.csv
+    File
 }
 
 fn parse_seed(value: &str) -> Result<u32, String> {
@@ -98,54 +81,13 @@ fn parse_seed(value: &str) -> Result<u32, String> {
     }
 }
 
-fn print_help(command: Option<&str>) -> Result<(), String> {
-    let mut cmd = Cli::command();
-
-    if let Some(name) = command {
-        let subcommand = cmd
-            .find_subcommand_mut(name)
-            .ok_or_else(|| format!("Unknown command '{name}'"))?;
-
-        subcommand
-            .print_help()
-            .map_err(|e| e.to_string())?;
-    } else {
-        cmd.print_help()
-            .map_err(|e| e.to_string())?;
-    }
-
-    println!();
-    Ok(())
-}
-
 fn main() -> ExitCode {
     let cli = Cli::parse();
-
-    // Handle help and version before validating the hash configuration.
-    match &cli.command {
-        Commands::Help { command } => {
-            return match print_help(command.as_deref()) {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(message) => {
-                    eprintln!("Error: {message}");
-                    ExitCode::FAILURE
-                }
-            };
-        }
-        Commands::Version => {
-            println!(
-                "{} {}",
-                env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION")
-            );
-            return ExitCode::SUCCESS;
-        }
-        _ => {}
-    }
 
     let config = HashConfig {
         syswhispers2_seed: cli.syswhispers2,
         djb2_seed: cli.djb2,
+        api_list: cli.apis,
     };
 
     if let Err(message) = config.validate() {
@@ -166,55 +108,9 @@ fn main() -> ExitCode {
             }
         }
 
-        Commands::Hashes => {
-            match hashes::generate_hashes(&config) {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    Err(format!("Could not generate hashes: {e}"))
-                }
-            }
-        }
-
-        Commands::Algorithm => {
-            println!("Selected algorithms:");
-
-            if let Some(seed) = config.syswhispers2_seed {
-                println!("  syswhispers2: 0x{seed:08X}");
-            }
-
-            if let Some(seed) = config.djb2_seed {
-                println!("  djb2:         0x{seed:08X}");
-            }
-
-            Ok(())
-        }
-
-        Commands::Extract { target } => {
-            match extract::scan(&target) {
-                Ok(candidates) => {
-                    println!(
-                        "Extracted {} unique candidates:",
-                        candidates.len()
-                    );
-
-                    for candidate in candidates {
-                        println!("0x{candidate:08X}");
-                    }
-
-                    Ok(())
-                }
-                Err(e) => {
-                    Err(format!("Failed to scan {target}: {e}"))
-                }
-            }
-        }
-
-        Commands::Compare { target }
-        | Commands::Scan { target } => {
+        Commands::Scan { target } => {
             run_compare(&target, &config)
         }
-
-        Commands::Help { .. } | Commands::Version => unreachable!(),
     };
 
     match result {

@@ -1,6 +1,8 @@
 pub mod syswhispers2;
 mod djb2;
 
+use std::path::PathBuf;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HashAlgorithm {
     SysWhispers2,
@@ -23,10 +25,11 @@ impl HashAlgorithm {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct HashConfig {
     pub syswhispers2_seed: Option<u32>,
     pub djb2_seed: Option<u32>,
+    pub api_list: Option<PathBuf>,
 }
 
 impl HashConfig {
