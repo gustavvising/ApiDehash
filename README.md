@@ -2,11 +2,6 @@
 
 API Dehash is a malware analysis tool that helps identify Windows API functions hidden through API hashing. It recovers the original Windows API names from hashed references, providing valuable insight into a program’s behavior and functionality.
 
-## Status
-
-Supports `syswhispers2` and `djb2` hashing algorithms with custom
-seeds. Per-sample automatic seed recovery, false-positive filtering and support for more hashing algorithms are planned.
-
 ## API Hashing
 
 API hashing is a technique commonly encountered during malware analysis.
@@ -92,15 +87,13 @@ Display help:
 ApiDehash --help
 ```
 
-Note: At least one seed must be provided for every command. Seeds can be specified in decimal or hexadecimal notation. The apis.txt file must be available in the current working directory for commands that generate or compare API hashes.
-
 ## Development
 
 ### Requirements
 
 - Rust
 - Cargo
-- Python 3.x
+- Python (Optional, for generating a custom api list)
 
 ### Clone the repository
 
