@@ -1,0 +1,87 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: api-dehash-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !startsWith(github.event.head_commit.message, 'chore: release v')
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure Git
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Increment patch version
+        id: version
+        shell: bash
+        run: |
+          cargo install cargo-edit --locked
+          cargo set-version --bump patch
+
+          VERSION=$(cargo metadata --no-deps --format-version 1 |
+            python -c "import json,sys; print(json.load(sys.stdin)['packages'][0]['version'])")
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build release
+        run: cargo build --release --locked
+
+      - name: Commit version update
+        shell: bash
+        run: |
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore: release v${{ steps.version.outputs.version }}"
+          git push origin HEAD:main
+
+      - name: Create and push tag
+        shell: bash
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          gh release create "$TAG" \
+            target/release/ApiDehash.exe \
+            --title "$TAG" \
+            --generate-notes
